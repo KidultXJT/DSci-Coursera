@@ -1,5 +1,5 @@
 ---
-title: "Week1-1 Graps"
+title: "Week1-1 Graphs"
 author: "Kidult"
 date: "2019/2/12"
 output: html_document
@@ -43,24 +43,22 @@ varDF <- reactive({
 fluidRow(
     column(6,
     selectInput("colorbox1",label="Box Color",choices=colors(),selected = "blue"),
-    checkboxInput("meanbox1",label="Mean abline",value = T),
-    checkboxInput("medianbox1",label="Median abline",value = T)),
+    checkboxInput("meanbox1",label="Mean abline",value=F),
+    checkboxInput("medianbox1",label="Median abline",value=F)),
     column(6,
     renderPlot({
         varDF <- varDF()
         varDF$varName <- colnames(varDF)[1]
         colnames(varDF)[1] <- "values"
-        boxplot(varDF$values,col = input$colorbox1)
-        if (input$meanbox1){
-          abline(h = mean(varDF$values))
+        if (class(varDF$values) == "numeric"){
+          boxplot(varDF$values,col = input$colorbox1)
+          if (input$meanbox1){
+            abline(h = mean(varDF$values))
+          }
+          if (input$medianbox1){
+            abline(h = median(varDF$values))
+          }
         }
-        if (input$medianbox1){
-          abline(h = median(varDF$values))
-        }
-        #ggplot(data=varDF,aes(x=varName,y=values))+ 
-        #  geom_boxplot(fill = input$colorbox1)+
-        #  theme_bw()+ 
-        #  theme(axis.text.x = element_text(angle = 90, size = 6))
     })
     ),
     column(6,
@@ -72,14 +70,12 @@ fluidRow(
         varDF <- varDF()
         colnames(varDF)[1] <- "values"
         varDF$varName <- colnames(varDF)[1]
-        hist(varDF$values,col = input$colorhist1,breaks = input$breakhist1)
-        if (input$rughist1){
-          rug(varDF$values)
+        if (class(varDF$values) == "numeric"){
+          hist(varDF$values,col = input$colorhist1,breaks = input$breakhist1)
+          if (input$rughist1){
+            rug(varDF$values)
+          }
         }
-        #ggplot(data=varDF,aes(x=values)) + 
-        #  geom_histogram(binwidth=.5,fill=input$colorhist1,color="black")+
-        #  theme_bw()+ 
-        #  theme(axis.text.x = element_text(angle = 90, size = 6))
     })
     )
 )
@@ -112,27 +108,27 @@ fluidRow(
     renderPlot({
         varDF <- varsDF()
         par(mfrow = c(2,1), mar = c(4,4,2,1))
-        hist(subset(varDF, region == "east")$pm25, col = input$colorhist2, breaks = input$breakhist2)
+        hist(subset(varDF,region=="east")$pm25,col=input$colorhist2,breaks=input$breakhist2,main="East",xlab="pm25")
         if(input$rughist2){
-          rug(subset(varDF, region == "east")$pm25)
+          rug(subset(varDF, region=="east")$pm25)
         }
-        hist(subset(varDF, region == "west")$pm25, col = input$colorhist2, breaks = input$breakhist2)
+        hist(subset(varDF,region=="west")$pm25,col=input$colorhist2,breaks=input$breakhist2,main="West",xlab="pm25")
         if(input$rughist2){
-          rug(subset(varDF, region == "west")$pm25)
+          rug(subset(varDF, region=="west")$pm25)
         }
     })
     ),
     column(6,
-    selectInput("colorscatterplot1",label="Histogram Color",choices=colors(),selected = "brown"),
+    #selectInput("colorscatterplot1",label="Histogram Color",choices=colors(),selected = "brown"),
     selectInput("varscatterplot1",label="compare with PM25",choices=c("latitude","longitude","fips"),selected = "latitude"),
     checkboxInput("diffcolorscatterplot1",label="Diff Region in Different color",value = T)),
     column(6,
     renderPlot({
         varDF <- varsDF()
         if (input$diffcolorscatterplot1){
-            with(varDF, plot(eval(parse(text =input$varscatterplot1)), pm25, col = region))
+            with(varDF, plot(eval(parse(text =input$varscatterplot1)),pm25,col=region,xlab=as.character(input$varscatterplot1)))
         }else{
-            with(varDF, plot(eval(parse(text =input$varscatterplot1)), pm25))
+            with(varDF, plot(eval(parse(text =input$varscatterplot1)),pm25,xlab=as.character(input$varscatterplot1)))
         }
         
     })
@@ -140,7 +136,169 @@ fluidRow(
 )
 ```
 
-```{r plotting, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
-# text lines points axis
+## Plotting
+The core plotting and graphics engine in R is encapsulated in the following packages;
+- graphics:: plotting func for "base" plot
+- grDevices:: all the code implement the various graphics ``devices``
 
+### Base Plotting System
+How to USE par() ??
+```{r base_sys, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+# plot()
+# ADD: text/lines/points/axis
+library(datasets)
+data(cars)
+fluidRow(
+    column(6,
+    selectInput("baseplot1var1",label="Variable 1",choices=colnames(cars),selected = "speed"),
+    selectInput("baseplot1var2",label="Variable 2",choices=colnames(cars),selected = "dist")),
+    column(6,
+    renderPlot({
+      library(datasets)
+      data(cars)
+      with(cars,plot(eval(parse(text = input$baseplot1var1)),eval(parse(text = input$baseplot1var2)),xlab = as.character(input$baseplot1var1),ylab = as.character(input$baseplot1var2)))
+    })
+    )
+)
+
+
+fluidRow(
+    column(6,
+    selectInput("baseplot2var1",label="Variable 1",choices=colnames(airquality),selected = "Wind"),
+    selectInput("baseplot2var2",label="Variable 2",choices=colnames(airquality),selected = "Ozone")),
+    column(6,
+    renderPlot({
+      with(airquality,plot(eval(parse(text=input$baseplot2var1)),eval(parse(text=input$baseplot2var2))))
+    })),
+    column(6,
+    selectInput("baseplot3color",label="Boxplot Fill Color",choices=colors(),selected = "red"),
+    selectInput("baseplot3var1", label="Variable 1",choices=colnames(airquality)[!(colnames(airquality) %in% c("Month"))],selected = "Ozone"),
+    p("transform(), Month from int class to category class"),
+    renderPrint("airquality <- transform(airquality, Month = factor(Month))")),
+    column(6,
+    renderPlot({
+      airquality <- transform(airquality, Month = factor(Month))
+      boxplot(eval(parse(text=input$baseplot3var1)) ~ Month, airquality, xlab="Month", ylabel = as.character(input$baseplot3var1),col=input$baseplot3color)
+    })
+    )
+)
+
+## Graphics Parameters
+### pch / lty / lwd / col / xlab / ylab
+### par() after plotting
+#### las / bg / mar / oma / mfrow / mfcol 
+## Plotting Func
+### plot() / lines() / points() / text() / title() / mtext() / axis()
+fluidRow(
+    column(6,
+    h5("with() title() func"),
+    p("base plotting system, like Photoshop, each plotting func can make a layer, and add together."),
+    selectInput("baseplot4var1",label="Variable 1",choices=colnames(airquality),selected = "Wind"),
+    selectInput("baseplot4var2",label="Variable 2",choices=colnames(airquality),selected = "Ozone")),
+    column(6,
+    renderPlot({
+      with(airquality,plot(eval(parse(text=input$baseplot4var1)),eval(parse(text=input$baseplot4var2))))
+      title(paste(input$baseplot4var1,"AND",input$baseplot4var2,"in New York City",sep = " "))
+    }),
+    renderPrint('with(airquality,plot(eval(parse(text=input$baseplot4var1)),eval(parse(text=input$baseplot4var2))))
+      title(paste(input$baseplot4var1,"AND",input$baseplot4var2,"in New York City",sep = " "))'),
+    p("As same as:"),
+    renderPrint('with(airquality,plot(eval(parse(text=input$baseplot4var1)),eval(parse(text=input$baseplot4var2)),main = paste(input$baseplot4var1,"AND",input$baseplot4var2,"in New York City",sep = " ")))'),
+    renderPlot({
+      with(airquality,plot(eval(parse(text=input$baseplot4var1)),eval(parse(text=input$baseplot4var2)),main = paste(input$baseplot4var1,"AND",input$baseplot4var2,"in New York City",sep = " ")))
+    })),
+    column(6,
+    h5("with() add layer"),
+    selectInput("baseplot5color1",label="change Color",choices=colors(),selected = "red"),
+    selectInput("baseplot5color2",label="change Color",choices=colors(),selected = "grey90"),
+    selectInput("baseplot5var1", label="Variable 1",choices=colnames(airquality)[!(colnames(airquality) %in% c("Month"))],selected = "Ozone"),
+    selectInput("baseplot5var2", label="Variable 2",choices=colnames(airquality)[!(colnames(airquality) %in% c("Month"))],selected = "Wind"),
+    selectInput("baseplot5var3", label="Month Select",choices=unique(airquality$Month),selected = "5"),
+    sliderInput("baseplot5pch", label="pch",max=25,min=0,value=2),
+    checkboxInput("baseplot5legend",label = "Legend",value = F),
+    selectInput("baseplot5legendpos", label="Legend Position",choices=c("bottomright", "bottom", "bottomleft", "left", "topleft", "top", "topright", "right", "center"),selected = "topright")),
+    #checkboxInput("baseplot5line",label = "Line",value = T),
+    #sliderInput("baseplot5linelwd", label="Line lwd",max=50,min=0,value=2)),
+    column(6,
+    renderPlot({
+      with(airquality,
+           plot(eval(parse(text=input$baseplot5var1)),
+                eval(parse(text=input$baseplot5var2)),
+                pch=input$baseplot5pch,
+                main = paste(input$baseplot5var1,"AND",input$baseplot5var2,"in New York City",sep = " ")))
+
+      #abline(lm(eval(parse(text=input$baseplot5var1)) ~ eval(parse(text=input$baseplot5var2)),data = airquality),lwd=input$baseplot5linelwd)
+
+     with(subset(airquality, Month == as.integer(input$baseplot5var3)),
+          points(eval(parse(text=input$baseplot5var1)),
+                  eval(parse(text=input$baseplot5var2)),
+                  col=input$baseplot5color1,
+                  pch=input$baseplot5pch))
+      with(subset(airquality, Month != as.integer(input$baseplot5var3)),
+           points(eval(parse(text=input$baseplot5var1)),
+                  eval(parse(text=input$baseplot5var2)),
+                  col=input$baseplot5color2,
+                  pch=input$baseplot5pch))
+      if (input$baseplot5legend){
+        legend(as.character(input$baseplot5legendpos),pch = input$baseplot5pch,col = c(input$baseplot5color1,input$baseplot5color2),legend = c(input$baseplot5var3,"Other Months"))
+      }
+      }),
+    br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),br()
+    ),
+    column(3,
+    h5("par() with mfrow"),
+    selectInput("baseplot6var0", label="Variable 1",choices=colnames(airquality),selected = "Ozone"),
+    selectInput("baseplot6var1", label="Variable 2",choices=colnames(airquality),selected = "Wind"),
+    selectInput("baseplot6var2", label="Variable 2",choices=colnames(airquality),selected = "Solar.R"),
+    selectInput("baseplot6var3", label="Variable 2",choices=colnames(airquality),selected = "Temp")),
+    column(9,
+    renderPlot({
+      par(mfrow = c(1,3), mar = c(4,4,2,1), oma = c(0,0,2,0))
+      with(airquality,{
+        plot(eval(parse(text=input$baseplot5var1)),eval(parse(text=input$baseplot5var0)))
+        plot(eval(parse(text=input$baseplot5var2)),eval(parse(text=input$baseplot5var0)))
+        plot(eval(parse(text=input$baseplot5var3)),eval(parse(text=input$baseplot5var0)))
+        })
+      })
+    )
+)
+```
+
+### Lattic System (xy with Z)
+base on grid::
+```{r lattice_sys, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+#xyplot() bwplot() coplot
+library(lattice)
+state <- data.frame(state.x77,region=state.region)
+fluidRow(
+    column(6,
+    selectInput("latplot1var1",label="Variable 1",choices=colnames(state)[!(colnames(state) %in% c("region","Life.Exp"))],selected = "Income")),
+    column(6,
+    renderPlot({
+      library(lattice)
+      state <- data.frame(state.x77,region=state.region)
+      xyplot(Life.Exp ~ eval(parse(text = input$latplot1var1)) | region, data = state, layout = c(1,4),xlab = as.character(input$latplot1var1))
+    })
+    )
+)
+```
+
+### ggplot System 
+1. [cookbook](http://www.cookbook-r.com/Graphs/)
+2. [online document](https://ggplot2.tidyverse.org/reference/)
+```{r ggplot_sys, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+library(ggplot2)
+data(mpg)
+fluidRow(
+    column(6,
+    selectInput("ggplot1var1",label="Variable 1",choices=colnames(mpg)[!(sapply(mpg[1,], class) %in% c("character"))],selected = "displ"),
+    selectInput("ggplot1var2",label="Variable 2",choices=colnames(mpg)[!(sapply(mpg[1,], class) %in% c("character"))],selected = "hwy")),
+    column(6,
+    renderPlot({
+      library(ggplot2)
+      data(mpg)
+      qplot(eval(parse(text = input$ggplot1var1)),eval(parse(text = input$ggplot1var2)),data=mpg)
+      })
+    )
+)
 ```
