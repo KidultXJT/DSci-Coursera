@@ -1,0 +1,57 @@
+---
+title: "Week4-3 Work with Dates"
+author: "Kidult"
+date: "2019/2/11"
+output: html_document
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r input, echo=FALSE}
+#inputPanel( # in grey box
+#selectInput("n_breaks", label = "Number of bins:",choices = c(10, 20, 35, 50), selected = 20),
+#sliderInput("bw_adjust", label = "Bandwidth adjustment:",min = 0.2, max = 2, value = 1, step = 0.2)
+           #)
+#flowLayout(numericInput("rows", "How many rows?", 5),selectInput("letter", "Which letter?", LETTERS),sliderInput("value", "What value?", 0, 100, 50))
+
+# d <- date()
+# class(d) # char
+# D <- Sys.Date()
+# format(D)
+# x = c("1jan1960","2jan1960","31mar1960","30jul1960")
+# z = as.Date(x,"%d%b%Y") 
+# %d = 1~31
+# %a = abbreviated weekday
+# %A = unabbreviated weekday
+# %m = 00~12
+# %b = abbreviated month
+# %B = unabbreviated month
+# %y = 2 digit year 
+# %Y = 4 digit year
+
+# as.numeric(z[1]-z[2]) = -1
+# weekdays(D) == unabbreviated weekday
+# months(D) == unabbreviated month
+# julian(D) == From one Date(Default 1970-01-01) To other Date (D)
+
+# install.packages("lubridate")
+# library(lubridate)
+# ymd()/mdy()/dmy()
+# ymd_hms(...,tz="China")
+# wday(D[1],label=T)
+# Sys.timezone() # "Asia/Shanghai"
+
+# ?POSIXlt
+
+#fluidPage(
+#  column(4,
+#         br("An restaurant's CSV File Link HERE:"),
+#         verticalLayout(a(href=fileUrl, "restaurants.csv")),
+#         br("head() table:"),
+#         renderTable(table(restData$neighborhood))
+#         )
+#  )
+```

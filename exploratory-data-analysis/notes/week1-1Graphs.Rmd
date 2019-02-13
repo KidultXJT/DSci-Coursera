@@ -1,0 +1,146 @@
+---
+title: "Week1-1 Graps"
+author: "Kidult"
+date: "2019/2/12"
+output: html_document
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+require(ggplot2)
+```
+## Principles of Analytic Graphics
+Principle 1: Show Comparisons (Control)
+Principle 2: Show causality, mechanism, explanation, systematic structure (Why?)
+Principle 3: Show multivariate data (Multi)
+Principle 4: Integration of evidence (Integrate)
+
+## Why graphs in data analysis
+1. To understand data properties [E]
+2. To find patterns in data [E]
+3. To suggest modeling strategies [E]
+4. To "debug" analyses [E]
+5. To communicate results
+
+## Example 1 
+```{r example1, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+url <- "https://raw.githubusercontent.com/jtleek/modules/master/04_ExploratoryAnalysis/exploratoryGraphs/data/avgpm25.csv"
+download.file(url,destfile = "../data/avgpm25.csv")
+
+avgpm25 <- read.csv("../data/avgpm25.csv",colClasses = c("numeric","character","factor","numeric","numeric"))
+fluidRow(renderTable(head(avgpm25)))
+
+fluidRow(
+  selectInput("var",label="Summary",choices=colnames(avgpm25),selected = "pm25"),
+  renderPrint(summary(avgpm25[,input$var])))
+
+varDF <- reactive({
+    varDF <- data.frame(avgpm25[,input$var])
+    colnames(varDF)[1] <- input$var
+    varDF
+})
+fluidRow(
+    column(6,
+    selectInput("colorbox1",label="Box Color",choices=colors(),selected = "blue"),
+    checkboxInput("meanbox1",label="Mean abline",value = T),
+    checkboxInput("medianbox1",label="Median abline",value = T)),
+    column(6,
+    renderPlot({
+        varDF <- varDF()
+        varDF$varName <- colnames(varDF)[1]
+        colnames(varDF)[1] <- "values"
+        boxplot(varDF$values,col = input$colorbox1)
+        if (input$meanbox1){
+          abline(h = mean(varDF$values))
+        }
+        if (input$medianbox1){
+          abline(h = median(varDF$values))
+        }
+        #ggplot(data=varDF,aes(x=varName,y=values))+ 
+        #  geom_boxplot(fill = input$colorbox1)+
+        #  theme_bw()+ 
+        #  theme(axis.text.x = element_text(angle = 90, size = 6))
+    })
+    ),
+    column(6,
+    selectInput("colorhist1",label="Histogram Color",choices=colors(),selected = "green"),
+    sliderInput("breakhist1",label="Histogram Breaks",min = 1, max = 100, step = 1, value = 16),
+    checkboxInput("rughist1",label="Rug Display",value = T)),
+    column(6,
+    renderPlot({
+        varDF <- varDF()
+        colnames(varDF)[1] <- "values"
+        varDF$varName <- colnames(varDF)[1]
+        hist(varDF$values,col = input$colorhist1,breaks = input$breakhist1)
+        if (input$rughist1){
+          rug(varDF$values)
+        }
+        #ggplot(data=varDF,aes(x=values)) + 
+        #  geom_histogram(binwidth=.5,fill=input$colorhist1,color="black")+
+        #  theme_bw()+ 
+        #  theme(axis.text.x = element_text(angle = 90, size = 6))
+    })
+    )
+)
+
+varsDF <- reactive({
+    avgpm25
+})
+fluidRow(
+    column(6,
+    selectInput("colorbox2",label="Box Color",choices=colors(),selected = "red"),
+    checkboxInput("meanbox2",label="Mean abline",value = F),
+    checkboxInput("medianbox2",label="Median abline",value = F)),
+    column(6,
+    renderPlot({
+        varDF <- varsDF()
+        boxplot(pm25 ~ region, data = varDF, col = input$colorbox2)
+        if (input$meanbox2){
+          abline(h = mean(varDF$pm25))
+        }
+        if (input$medianbox2){
+          abline(h = median(varDF$pm25))
+        }
+    })
+    ),
+    column(6,
+    selectInput("colorhist2",label="Histogram Color",choices=colors(),selected = "yellow"),
+    sliderInput("breakhist2",label="Histogram Breaks",min = 1, max = 100, step = 1, value = 16),
+    checkboxInput("rughist2",label="Rug Display",value = T)),
+    column(6,
+    renderPlot({
+        varDF <- varsDF()
+        par(mfrow = c(2,1), mar = c(4,4,2,1))
+        hist(subset(varDF, region == "east")$pm25, col = input$colorhist2, breaks = input$breakhist2)
+        if(input$rughist2){
+          rug(subset(varDF, region == "east")$pm25)
+        }
+        hist(subset(varDF, region == "west")$pm25, col = input$colorhist2, breaks = input$breakhist2)
+        if(input$rughist2){
+          rug(subset(varDF, region == "west")$pm25)
+        }
+    })
+    ),
+    column(6,
+    selectInput("colorscatterplot1",label="Histogram Color",choices=colors(),selected = "brown"),
+    selectInput("varscatterplot1",label="compare with PM25",choices=c("latitude","longitude","fips"),selected = "latitude"),
+    checkboxInput("diffcolorscatterplot1",label="Diff Region in Different color",value = T)),
+    column(6,
+    renderPlot({
+        varDF <- varsDF()
+        if (input$diffcolorscatterplot1){
+            with(varDF, plot(eval(parse(text =input$varscatterplot1)), pm25, col = region))
+        }else{
+            with(varDF, plot(eval(parse(text =input$varscatterplot1)), pm25))
+        }
+        
+    })
+    )
+)
+```
+
+```{r plotting, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+# text lines points axis
+
+```

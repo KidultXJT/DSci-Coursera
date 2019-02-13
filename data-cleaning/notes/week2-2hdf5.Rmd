@@ -1,0 +1,53 @@
+---
+title: "Week2-2 HDF5"
+author: "Kidult"
+date: "2019/1/30"
+output: html_document
+runtime: shiny
+---
+
+```{r setup, include=FALSE,echo = TRUE}
+knitr::opts_chunk$set()
+# source("http://bioconductor.org/biocLite.R")
+# biocLite("rhdf5")
+## 'dplyr','evaluate','fansi','haven','htmlwidgets','httpuv','httr','jsonlite','mongolite','RJSONIO'
+## 
+library(rhdf5)
+```
+
+[HDF5](http://www.hdfgroup.org)
+- Heirarchical
+- Data
+- Format
+
+```{r eruptions, echo=FALSE}
+inputPanel(
+  selectInput("n_breaks", label = "Number of bins:",
+              choices = c(10, 20, 35, 50), selected = 20),
+  
+  sliderInput("bw_adjust", label = "Bandwidth adjustment:",
+              min = 0.2, max = 2, value = 1, step = 0.2)
+)
+
+renderPlot({
+  hist(faithful$eruptions, probability = TRUE, breaks = as.numeric(input$n_breaks),
+       xlab = "Duration (minutes)", main = "Geyser eruption duration")
+  
+  dens <- density(faithful$eruptions, adjust = input$bw_adjust)
+  lines(dens, col = "blue")
+})
+```
+
+## Embedded Application
+
+It's also possible to embed an entire Shiny application within an R Markdown document using the `shinyAppDir` function. This example embeds a Shiny application located in another directory:
+
+```{r tabsets, echo=FALSE}
+shinyAppDir(
+  system.file("examples/06_tabsets", package = "shiny"),
+  options = list(
+    width = "100%", height = 550
+  )
+)
+```
+

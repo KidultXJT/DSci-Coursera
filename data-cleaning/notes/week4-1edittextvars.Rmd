@@ -1,0 +1,59 @@
+---
+title: "Week4-1 Edit TextVars"
+author: "Kidult"
+date: "2019/2/11"
+output: html_document
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r input, echo=FALSE}
+#inputPanel( # in grey box
+#selectInput("n_breaks", label = "Number of bins:",choices = c(10, 20, 35, 50), selected = 20),
+#sliderInput("bw_adjust", label = "Bandwidth adjustment:",min = 0.2, max = 2, value = 1, step = 0.2)
+           #)
+#flowLayout(numericInput("rows", "How many rows?", 5),selectInput("letter", "Which letter?", LETTERS),sliderInput("value", "What value?", 0, 100, 50))
+
+fileUrl <- "https://data.baltimorecity.gov/api/views/dz54-2aru/rows.csv?accessType=DOWNLOAD"
+download.file(fileUrl,destfile="../data/restaurants.csv")
+cameraData <- read.csv("../data/cameras.csv")
+#names(cameraData)
+#tolower(names(cameraData))
+#splitNames <- strsplit(names(cameraData),"\\.")
+#splitNames[[6]]
+#mylist <- list(letters=c("A","B","C"),numbers=1:3,matrix(1:25,ncol=5))
+#mylist$letters#mylist[[1]]
+#firstElement <- function(x){x[1]}
+#sapply(splitNames,firstElement)
+#grep("Alameda",cameraData$intersection)         # position
+#grep("Alameda",cameraData$intersection,value=T) # value
+#table(grepl("Alameda",cameraData$intersection)) # num of T/F
+#grep("Alameda",cameraData$intersection)
+#length(grep("JeffStreet",cameraData$intersection)) # if length  == 0
+#library(stringr)
+# nchar()/substr()/paste()/paste0()/str_trim()
+
+#fileUrl1 <- "https://dl.dropboxusercontent.com/u/7710864/data/reviews-apr29.csv"
+#fileUrl2 <- "https://dl.dropboxusercontent.com/u/7710864/data/solutions-apr29.csv"
+#download.file(fileUrl1,destfile="../data/reviews.csv")
+#download.file(fileUrl2,destfile="../data/solutions.csv")
+#reviewsData <- read.csv("../data/reviews.csv")
+#solutionsData <- read.csv("../data/solutions.csv")
+# clean
+#sub("_","",names(reviews))
+#gsub("_","",names(reviews))
+
+
+fluidPage(
+  column(4,
+         br("An restaurant's CSV File Link HERE:"),
+         verticalLayout(a(href=fileUrl, "restaurants.csv")),
+         br("head() table:"),
+         renderTable(table(restData$neighborhood))
+         )
+  )
+
+```
