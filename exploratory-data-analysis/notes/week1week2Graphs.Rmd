@@ -1,0 +1,595 @@
+---
+title: "Week1~2 Graphs"
+author: "Kidult"
+date: "2019/2/12"
+output: html_document
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+require(ggplot2)
+```
+## Principles of Analytic Graphics
+Principle 1: Show Comparisons (Control)
+Principle 2: Show causality, mechanism, explanation, systematic structure (Why?)
+Principle 3: Show multivariate data (Multi)
+Principle 4: Integration of evidence (Integrate)
+
+## Why graphs in data analysis
+1. To understand data properties [E]
+2. To find patterns in data [E]
+3. To suggest modeling strategies [E]
+4. To "debug" analyses [E]
+5. To communicate results
+
+## Example 
+```{r example1, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+url <- "https://raw.githubusercontent.com/jtleek/modules/master/04_ExploratoryAnalysis/exploratoryGraphs/data/avgpm25.csv"
+download.file(url,destfile = "../data/avgpm25.csv")
+
+avgpm25 <- read.csv("../data/avgpm25.csv",colClasses = c("numeric","character","factor","numeric","numeric"))
+fluidRow(renderTable(head(avgpm25)))
+
+fluidRow(
+  selectInput("var",label="Summary",choices=colnames(avgpm25),selected = "pm25"),
+  renderPrint(summary(avgpm25[,input$var])))
+
+varDF <- reactive({
+    varDF <- data.frame(avgpm25[,input$var])
+    colnames(varDF)[1] <- input$var
+    varDF
+})
+fluidRow(
+    column(6,
+    selectInput("colorbox1",label="Box Color",choices=colors(),selected = "blue"),
+    checkboxInput("meanbox1",label="Mean abline",value=F),
+    checkboxInput("medianbox1",label="Median abline",value=F)),
+    column(6,
+    renderPlot({
+        varDF <- varDF()
+        varDF$varName <- colnames(varDF)[1]
+        colnames(varDF)[1] <- "values"
+        if (class(varDF$values) == "numeric"){
+          boxplot(varDF$values,col = input$colorbox1)
+          if (input$meanbox1){
+            abline(h = mean(varDF$values))
+          }
+          if (input$medianbox1){
+            abline(h = median(varDF$values))
+          }
+        }
+    })
+    ),
+    column(6,
+    selectInput("colorhist1",label="Histogram Color",choices=colors(),selected = "green"),
+    sliderInput("breakhist1",label="Histogram Breaks",min = 1, max = 100, step = 1, value = 16),
+    checkboxInput("rughist1",label="Rug Display",value = T)),
+    column(6,
+    renderPlot({
+        varDF <- varDF()
+        colnames(varDF)[1] <- "values"
+        varDF$varName <- colnames(varDF)[1]
+        if (class(varDF$values) == "numeric"){
+          hist(varDF$values,col = input$colorhist1,breaks = input$breakhist1)
+          if (input$rughist1){
+            rug(varDF$values)
+          }
+        }
+    })
+    )
+)
+
+varsDF <- reactive({
+    avgpm25
+})
+fluidRow(
+    column(6,
+    selectInput("colorbox2",label="Box Color",choices=colors(),selected = "red"),
+    checkboxInput("meanbox2",label="Mean abline",value = F),
+    checkboxInput("medianbox2",label="Median abline",value = F)),
+    column(6,
+    renderPlot({
+        varDF <- varsDF()
+        boxplot(pm25 ~ region, data = varDF, col = input$colorbox2)
+        if (input$meanbox2){
+          abline(h = mean(varDF$pm25))
+        }
+        if (input$medianbox2){
+          abline(h = median(varDF$pm25))
+        }
+    })
+    ),
+    column(6,
+    selectInput("colorhist2",label="Histogram Color",choices=colors(),selected = "yellow"),
+    sliderInput("breakhist2",label="Histogram Breaks",min = 1, max = 100, step = 1, value = 16),
+    checkboxInput("rughist2",label="Rug Display",value = T)),
+    column(6,
+    renderPlot({
+        varDF <- varsDF()
+        par(mfrow = c(2,1), mar = c(4,4,2,1))
+        hist(subset(varDF,region=="east")$pm25,col=input$colorhist2,breaks=input$breakhist2,main="East",xlab="pm25")
+        if(input$rughist2){
+          rug(subset(varDF, region=="east")$pm25)
+        }
+        hist(subset(varDF,region=="west")$pm25,col=input$colorhist2,breaks=input$breakhist2,main="West",xlab="pm25")
+        if(input$rughist2){
+          rug(subset(varDF, region=="west")$pm25)
+        }
+    })
+    ),
+    column(6,
+    #selectInput("colorscatterplot1",label="Histogram Color",choices=colors(),selected = "brown"),
+    selectInput("varscatterplot1",label="compare with PM25",choices=c("latitude","longitude","fips"),selected = "latitude"),
+    checkboxInput("diffcolorscatterplot1",label="Diff Region in Different color",value = T)),
+    column(6,
+    renderPlot({
+        varDF <- varsDF()
+        if (input$diffcolorscatterplot1){
+            with(varDF, plot(eval(parse(text =input$varscatterplot1)),pm25,col=region,xlab=as.character(input$varscatterplot1)))
+        }else{
+            with(varDF, plot(eval(parse(text =input$varscatterplot1)),pm25,xlab=as.character(input$varscatterplot1)))
+        }
+        
+    })
+    )
+)
+```
+
+## Plotting
+The core plotting and graphics engine in R is encapsulated in the following packages;
+- graphics:: plotting func for "base" plot
+- grDevices:: all the code implement the various graphics ``devices``
+
+### Base Plotting System
+How to USE par() ??
+```{r base_sys, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+# plot()
+# ADD: text/lines/points/axis
+library(datasets)
+data(cars)
+fluidRow(
+    column(6,
+    selectInput("baseplot1var1",label="Variable 1",choices=colnames(cars),selected = "speed"),
+    selectInput("baseplot1var2",label="Variable 2",choices=colnames(cars),selected = "dist")),
+    column(6,
+    renderPlot({
+      library(datasets)
+      data(cars)
+      with(cars,plot(eval(parse(text = input$baseplot1var1)),eval(parse(text = input$baseplot1var2)),xlab = as.character(input$baseplot1var1),ylab = as.character(input$baseplot1var2)))
+    })
+    )
+)
+
+
+fluidRow(
+    column(6,
+    selectInput("baseplot2var1",label="Variable 1",choices=colnames(airquality),selected = "Wind"),
+    selectInput("baseplot2var2",label="Variable 2",choices=colnames(airquality),selected = "Ozone")),
+    column(6,
+    renderPlot({
+      with(airquality,plot(eval(parse(text=input$baseplot2var1)),eval(parse(text=input$baseplot2var2))))
+    })),
+    column(6,
+    selectInput("baseplot3color",label="Boxplot Fill Color",choices=colors(),selected = "red"),
+    selectInput("baseplot3var1", label="Variable 1",choices=colnames(airquality)[!(colnames(airquality) %in% c("Month"))],selected = "Ozone"),
+    p("transform(), Month from int class to category class"),
+    renderPrint("airquality <- transform(airquality, Month = factor(Month))")),
+    column(6,
+    renderPlot({
+      airquality <- transform(airquality, Month = factor(Month))
+      boxplot(eval(parse(text=input$baseplot3var1)) ~ Month, airquality, xlab="Month", ylabel = as.character(input$baseplot3var1),col=input$baseplot3color)
+    })
+    )
+)
+
+## Graphics Parameters
+### pch / lty / lwd / col / xlab / ylab
+### par() after plotting
+#### las / bg / mar / oma / mfrow / mfcol 
+## Plotting Func
+### plot() / lines() / points() / text() / title() / mtext() / axis()
+fluidRow(
+    column(6,
+    h5("with() title() func"),
+    p("base plotting system, like Photoshop, each plotting func can make a layer, and add together."),
+    selectInput("baseplot4var1",label="Variable 1",choices=colnames(airquality),selected = "Wind"),
+    selectInput("baseplot4var2",label="Variable 2",choices=colnames(airquality),selected = "Ozone")),
+    column(6,
+    renderPlot({
+      with(airquality,plot(eval(parse(text=input$baseplot4var1)),eval(parse(text=input$baseplot4var2))))
+      title(paste(input$baseplot4var1,"AND",input$baseplot4var2,"in New York City",sep = " "))
+    }),
+    renderPrint('with(airquality,plot(eval(parse(text=input$baseplot4var1)),eval(parse(text=input$baseplot4var2))))
+      title(paste(input$baseplot4var1,"AND",input$baseplot4var2,"in New York City",sep = " "))'),
+    p("As same as:"),
+    renderPrint('with(airquality,plot(eval(parse(text=input$baseplot4var1)),eval(parse(text=input$baseplot4var2)),main = paste(input$baseplot4var1,"AND",input$baseplot4var2,"in New York City",sep = " ")))'),
+    renderPlot({
+      with(airquality,plot(eval(parse(text=input$baseplot4var1)),eval(parse(text=input$baseplot4var2)),main = paste(input$baseplot4var1,"AND",input$baseplot4var2,"in New York City",sep = " ")))
+    })),
+    column(6,
+    h5("with() add layer"),
+    selectInput("baseplot5color1",label="change Color",choices=colors(),selected = "red"),
+    selectInput("baseplot5color2",label="change Color",choices=colors(),selected = "grey90"),
+    selectInput("baseplot5var1", label="Variable 1",choices=colnames(airquality)[!(colnames(airquality) %in% c("Month"))],selected = "Ozone"),
+    selectInput("baseplot5var2", label="Variable 2",choices=colnames(airquality)[!(colnames(airquality) %in% c("Month"))],selected = "Wind"),
+    selectInput("baseplot5var3", label="Month Select",choices=unique(airquality$Month),selected = "5"),
+    sliderInput("baseplot5pch", label="pch",max=25,min=0,value=2),
+    checkboxInput("baseplot5legend",label = "Legend",value = F),
+    selectInput("baseplot5legendpos", label="Legend Position",choices=c("bottomright", "bottom", "bottomleft", "left", "topleft", "top", "topright", "right", "center"),selected = "topright")),
+    #checkboxInput("baseplot5line",label = "Line",value = T),
+    #sliderInput("baseplot5linelwd", label="Line lwd",max=50,min=0,value=2)),
+    column(6,
+    renderPlot({
+      with(airquality,
+           plot(eval(parse(text=input$baseplot5var1)),
+                eval(parse(text=input$baseplot5var2)),
+                pch=input$baseplot5pch,
+                main = paste(input$baseplot5var1,"AND",input$baseplot5var2,"in New York City",sep = " ")))
+
+      #abline(lm(eval(parse(text=input$baseplot5var1)) ~ eval(parse(text=input$baseplot5var2)),data = airquality),lwd=input$baseplot5linelwd)
+
+     with(subset(airquality, Month == as.integer(input$baseplot5var3)),
+          points(eval(parse(text=input$baseplot5var1)),
+                  eval(parse(text=input$baseplot5var2)),
+                  col=input$baseplot5color1,
+                  pch=input$baseplot5pch))
+      with(subset(airquality, Month != as.integer(input$baseplot5var3)),
+           points(eval(parse(text=input$baseplot5var1)),
+                  eval(parse(text=input$baseplot5var2)),
+                  col=input$baseplot5color2,
+                  pch=input$baseplot5pch))
+      if (input$baseplot5legend){
+        legend(as.character(input$baseplot5legendpos),pch = input$baseplot5pch,col = c(input$baseplot5color1,input$baseplot5color2),legend = c(input$baseplot5var3,"Other Months"))
+      }
+      }),
+    br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),br()
+    ),
+    column(3,
+    h5("par() with mfrow"),
+    selectInput("baseplot6var0", label="Variable 0",choices=colnames(airquality),selected = "Ozone"),
+    selectInput("baseplot6var1", label="Variable 1",choices=colnames(airquality),selected = "Wind"),
+    selectInput("baseplot6var2", label="Variable 2",choices=colnames(airquality),selected = "Solar.R"),
+    selectInput("baseplot6var3", label="Variable 3",choices=colnames(airquality),selected = "Temp")),
+    column(9,
+    renderPlot({
+      par(mfrow = c(1,3), mar = c(4,4,2,1), oma = c(0,0,2,0))
+      with(airquality,{
+        plot(eval(parse(text=input$baseplot6var1)),eval(parse(text=input$baseplot6var0)))
+        plot(eval(parse(text=input$baseplot6var2)),eval(parse(text=input$baseplot6var0)))
+        plot(eval(parse(text=input$baseplot6var3)),eval(parse(text=input$baseplot6var0)))
+        })
+      })
+    )
+)
+```
+
+### Lattic System (xy with Z)
+base on grid():: 
+```{r lattice_sys, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+#xyplot() bwplot() coplot
+library(lattice)
+library(datasets)
+state <- data.frame(state.x77,region=state.region)
+fluidRow(
+    column(6,
+    selectInput("latplot1var1",label="Variable 1",choices=colnames(state)[!(colnames(state) %in% c("region","Life.Exp"))],selected = "Income")),
+    column(6,
+    renderPlot({
+      library(lattice)
+      state <- data.frame(state.x77,region=state.region)
+      xyplot(Life.Exp ~ eval(parse(text = input$latplot1var1)) | region, data = state, layout = c(1,4),xlab = as.character(input$latplot1var1))
+    })
+    )
+)
+
+## Graphics Parameters
+### 
+## Plotting Func
+### xyplot() / bwplot() / histogram() / stripplot() / dotplot() / splom() as same as pairs() / levelplot() / contourplot()
+
+## xyplot()
+### xyplot(x ~ y | f * g, data)
+### data$x data$y as vars in the graph
+### f condition for x
+### g condition for y
+### * a interaction between x in f, y in g
+fluidRow(
+    column(3,
+    selectInput("latplot2cond",label="Condition", choices=colnames(airquality)[!(sapply(airquality[1,], class) %in% c("numeric"))],   selected = "Month"),
+    selectInput("latplot2var1",label="Variable 1",choices=colnames(airquality)[!(sapply(airquality[1,], class) %in% c("character","factor"))],selected = "Ozone"),
+    selectInput("latplot2var2",label="Variable 2",choices=colnames(airquality)[!(sapply(airquality[1,], class) %in% c("character","factor"))],selected = "Wind"),
+    sliderInput("latplot2layoutrow", label="Layout Rows",   max=10,min=1,value=5,step = 1),
+    sliderInput("latplot2layoutcol", label="Layout Columns",max=10,min=1,value=1,step = 1)),
+
+    column(9,
+    renderPlot({
+      xyplot(eval(parse(text=input$latplot2var1)) ~ eval(parse(text=input$latplot2var2)) | eval(parse(text=input$latplot2cond)) , data=airquality , layout = c(input$latplot2layoutrow,input$latplot2layoutcol))
+    })
+    )
+)
+
+## Panel Func
+fluidRow(
+    column(3,
+    sliderInput("latplot3layoutrow", label="Layout Rows",   max=10,min=1,value=2,step = 1),
+    sliderInput("latplot3layoutcol", label="Layout Columns",max=10,min=1,value=1,step = 1)),
+
+    column(9,
+    renderPlot({
+      set.seed(10)
+      x <- rnorm(100)
+      f <- rep(0:1, each = 50)
+      y <- x + f - f * x + rnorm(100, sd = 0.5)
+      # make condition
+      f <- factor(f, labels = c("Group1","Group2"))
+      xyplot(x ~ y | f , data=airquality , layout = c(input$latplot3layoutrow,input$latplot3layoutcol))
+    })
+    )
+)
+fluidRow(
+    column(3,
+           renderText('
+      xyplot(x ~ y | f , data=airquality , 
+             panel = function(x,y,...){
+               panel.xyplot(x,y,...)
+               panel.lmline(x,y,col=2)
+             })
+                                        ')),
+    column(9,
+    renderPlot({
+      set.seed(10)
+      x <- rnorm(100)
+      f <- rep(0:1, each = 50)
+      y <- x + f - f * x + rnorm(100, sd = 0.5)
+      # make condition
+      f <- factor(f, labels = c("Group1","Group2"))
+      xyplot(x ~ y | f , data=airquality , 
+             panel = function(x,y,...){
+               panel.xyplot(x,y,...)
+               panel.lmline(x,y,col=2)
+             })
+    })
+    )
+)
+load("../data/maacs.Rda")
+maacs <- maacs[,2:ncol(maacs)]
+fluidRow(
+    column(3,
+    selectInput("latplot5cond1",label="Condition", choices=colnames(maacs)[!(sapply(maacs[1,], class) %in% c("numeric"))],   selected = "NocturnalSympt"),
+    selectInput("latplot5cond2",label="Condition", choices=colnames(maacs)[!(sapply(maacs[1,], class) %in% c("numeric"))],   selected = "bmicat"),
+    selectInput("latplot5var1",label="Variable 1",choices=colnames(maacs)[!(sapply(maacs[1,], class) %in% c("character","factor"))],selected = "logpm25"),
+    selectInput("latplot5var2",label="Variable 2",choices=colnames(maacs)[!(sapply(maacs[1,], class) %in% c("character","factor"))],selected = "pm25"),
+    sliderInput("latplot5layoutrow", label="Layout Rows",   max=30,min=1,value=4,step = 1),
+    sliderInput("latplot5layoutcol", label="Layout Columns",max=10,min=1,value=9,step = 1)),
+
+    column(9,
+    renderPlot({
+      load("../data/maacs.Rda")
+      maacs <- maacs[,2:ncol(maacs)]
+      xyplot(eval(parse(text = input$latplot5var1)) ~ eval(parse(text = input$latplot5var2)) | eval(parse(text = input$latplot5cond1)) * eval(parse(text = input$latplot5cond2)), data=maacs , layout = c(input$latplot5layoutcol,input$latplot5layoutrow))
+    })
+    )
+)
+```
+
+### ggplot System 
+1. [cookbook](http://www.cookbook-r.com/Graphs/)
+2. [online document](https://ggplot2.tidyverse.org/reference/)
+```{r ggplot_sys, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+library(ggplot2)
+data(mpg)
+## qplot()
+### qplot(x coord, ycoord, dataframe)
+### qplot(x coord, ycoord, dataframe, color) colorlegend
+### Add geom
+#### qplot(x coord, ycoord, dataframe, geom = c("point","smooth"))
+####                                   geom_point() | geom_smooth()
+### Histgome
+#### qplot(x coord, dataframe, fill, binwidth = 2) "histgome"
+### split
+#### qplot(x,y,dataframe,facets=.~class) class~.
+#### split by class
+#### 
+fluidRow(
+    column(3,
+    selectInput("ggplot1var1",label="Variable 1",choices=colnames(mpg)[!(sapply(mpg[1,], class) %in% c("character"))],selected = "displ"),
+    selectInput("ggplot1var2",label="Variable 2",choices=colnames(mpg)[!(sapply(mpg[1,], class) %in% c("character"))],selected = "hwy")),
+    column(9,
+    renderPlot({
+      library(ggplot2)
+      data(mpg)
+      qplot(eval(parse(text = input$ggplot1var1)),eval(parse(text = input$ggplot1var2)),data=mpg)
+      })
+    )
+)
+
+# Count
+load("../data/maacs.Rda")
+fluidRow(
+    column(3,
+    checkboxInput("ggplot2log",label="Log(Var)",value = T),
+    selectInput("ggplot2type",label="Graph Type",choices=c("density","histogram"),selected="histogram"),
+    selectInput("ggplot2var",label="Variable",choices=colnames(maacs),selected="eno"),
+    selectInput("ggplot2class",label="Class",choices=colnames(maacs),selected="bmicat")),
+    column(9,
+    renderPlot({
+      library(ggplot2)
+      load("../data/maacs.Rda")
+      if (input$ggplot2log){
+        if (class(maacs[1,input$ggplot2var]) != "numeric"){
+          qplot(eval(parse(text = input$ggplot2var)),data=maacs,color=eval(parse(text = input$ggplot2class)),geom = input$ggplot2type)
+        }else{
+          qplot(log(eval(parse(text = input$ggplot2var))),data=maacs,color=eval(parse(text = input$ggplot2class)),geom = input$ggplot2type)
+        }
+      }else{
+        qplot(eval(parse(text = input$ggplot2var)),data=maacs,color=eval(parse(text = input$ggplot2class)),geom = input$ggplot2type)
+      }
+      })
+    )
+)
+
+# Point
+fluidRow(
+    column(3,
+    checkboxInput("ggplot3log",label="Log(Var)",value = T),
+    selectInput("ggplot3type",label="Graph Type",choices=c("point","line"),selected="histogram"),
+    selectInput("ggplot3var1",label="Variable1",choices=colnames(maacs),selected="eno"),
+    selectInput("ggplot3var2",label="Variable2",choices=colnames(maacs),selected="pm25"),
+    selectInput("ggplot3class1",label="Class",choices=colnames(maacs),selected="bmicat"),
+    selectInput("ggplot3class2",label="Class",choices=colnames(maacs),selected="mopos")),
+    column(9,
+    renderPlot({
+      library(ggplot2)
+      load("../data/maacs.Rda")
+      if (input$ggplot3log){
+        if (class(maacs[1,input$ggplot3var1]) != "numeric" | class(maacs[1,input$ggplot3var2]) != "numeric"){
+          qplot(eval(parse(text = input$ggplot3var1)),eval(parse(text = input$ggplot3var2)),data=maacs,color=eval(parse(text = input$ggplot3class1)),shape=eval(parse(text = input$ggplot3class2)),geom = input$ggplot3type)
+        }else{
+          qplot(log(eval(parse(text = input$ggplot3var1))),log(eval(parse(text = input$ggplot3var2))),data=maacs,color=eval(parse(text = input$ggplot3class1)),shape=eval(parse(text = input$ggplot3class2)),geom = input$ggplot3type)
+        }
+      }else{
+        qplot(eval(parse(text = input$ggplot3var1)),eval(parse(text = input$ggplot3var2)),data=maacs,color=eval(parse(text = input$ggplot3class1)),shape=eval(parse(text = input$ggplot3class2)),geom = input$ggplot3type)
+      }
+      })
+    )
+)
+
+# smooth
+fluidRow(
+    column(3,
+    checkboxInput("ggplot4log",label="Log(Var)",value = T),
+    selectInput("ggplot4type",label="Graph Type",choices=c("point","line"),selected="point"),
+    selectInput("ggplot4var1",label="Variable1",choices=colnames(maacs),selected="eno"),
+    selectInput("ggplot4var2",label="Variable2",choices=colnames(maacs),selected="pm25"),
+    selectInput("ggplot4class1",label="Class",choices=colnames(maacs),selected="bmicat"),
+    selectInput("ggplot4class2",label="Class",choices=colnames(maacs),selected="mopos")),
+    column(9,
+    renderPlot({
+      library(ggplot2)
+      load("../data/maacs.Rda")
+      if (input$ggplot4log){
+        if (class(maacs[1,input$ggplot4var1]) != "numeric" | class(maacs[1,input$ggplot4var2]) != "numeric"){
+          
+          qplot(eval(parse(text = input$ggplot4var1)),eval(parse(text = input$ggplot4var2)),data=maacs,color=eval(parse(text = input$ggplot4class1)),facets=eval(parse(text = paste(".","~",as.character(input$ggplot4class2)))),geom = input$ggplot4type) +
+            geom_smooth(method = "lm")
+        }else{
+          qplot(log(eval(parse(text = input$ggplot4var1))),log(eval(parse(text = input$ggplot4var2))),data=maacs,color=eval(parse(text = input$ggplot4class1)),facets=eval(parse(text = paste(".","~",as.character(input$ggplot4class2)))),geom = input$ggplot4type) +
+            geom_smooth(method = "lm")
+        }
+      }else{
+        qplot(eval(parse(text = input$ggplot4var1)),eval(parse(text = input$ggplot4var2)),data=maacs,color=eval(parse(text = input$ggplot4class1)),facets=eval(parse(text = paste(".","~",as.character(input$ggplot4class2)))),geom = input$ggplot4type) +
+            geom_smooth(method = "lm")
+      }
+      })
+    )
+)
+
+## ggplot()
+### dataframe
+### aesthetic mappings 美学映射
+### geoms display as
+### facets conditional plots
+### stats 
+### scales
+### coordinate sys
+fluidRow(
+    column(3,
+    selectInput("ggplot5type",label="Graph Type",choices=c("point","line"),selected="point"),
+    selectInput("ggplot5var1",label="Variable1",choices=colnames(maacs),selected="logpm25"),
+    selectInput("ggplot5var2",label="Variable2",choices=colnames(maacs),selected="NocturnalSympt"),
+    selectInput("ggplot5class1",label="Class1",choices=colnames(maacs),selected="bmicat"),
+    selectInput("ggplot5class2",label="Class2",choices=colnames(maacs),selected="mopos"),
+    selectInput("ggplot5color",label="Color(in 1 Color)",choices=colors(),selected="steelblue"),
+    checkboxInput("ggplot5colors",label="Color(in diff Class1)",value = F),
+    checkboxInput("ggplot5shapes",label="Shapes(in diff Class2)",value = F),
+    sliderInput("ggplot5shape",label = "Shape Type",min=0,max=30,step=1,value=20),
+    sliderInput("ggplot5alpha",label = "Alpha",min=.1,max=1,step=.05,value=.4),
+    sliderInput("ggplot5size",label = "Size",min=.5,max=10,step=.5,value=4),
+    textInput("ggplot5title",label = "Title",value = ""),
+    textInput("ggplot5xlab",label = "X axis Label",value = ""),
+    textInput("ggplot5ylab",label = "Y axis Label",value = ""),
+    textInput("ggplot5clab",label = "Color Label",value = ""),
+    textInput("ggplot5slab",label = "Shape Label",value = ""),
+    selectInput("ggplot5themeType",label = "Theme",choices = c("gray","bw","linedraw","light","dark","minimal","classic","void","test"),selected = "bw")),
+    column(9,
+    renderPlot(height = 800,{
+      library(ggplot2)
+      load("../data/maacs.Rda")
+      p <- ggplot(data=maacs,aes(x=eval(parse(text = input$ggplot5var1)),eval(parse(text = input$ggplot5var2))))
+      
+      if(input$ggplot5colors){
+        colorSet <- paste("aes(color=",as.character(input$ggplot5class1),")",sep="")
+        if(input$ggplot5shapes){
+          Set <- paste("aes(shape=",as.character(input$ggplot5class2),",","color=",as.character(input$ggplot5class1),")",sep="")
+        }else{
+          Set <- paste(colorSet,paste("shape=",input$ggplot5shape,sep=""),sep=",")
+        }
+      }else{
+        colorSet <- paste("color='",as.character(input$ggplot5color),"'",sep="")
+        if(input$ggplot5shapes){
+          Set <- paste("aes(shape=",as.character(input$ggplot5class2),"),",colorSet,sep="")
+        }else{
+          Set <- paste(colorSet,paste("shape=",input$ggplot5shape,sep=""),sep=",")
+        }
+      }
+      
+      
+      plotType <- eval(parse(text = paste("geom_",as.character(input$ggplot5type),"(alpha=",
+                                          as.character(input$ggplot5alpha),",size=",
+                                          as.character(input$ggplot5size),",",
+                                          Set,
+                                          ")",sep = "")))
+      
+      themeType <- eval(parse(text = paste("theme_",as.character(input$ggplot5themeType),"()",sep = "")))
+      
+      p + 
+        plotType + 
+        geom_smooth(method = "lm") +
+        facet_grid(eval(parse(text=paste(as.character(input$ggplot4class1),"~",as.character(input$ggplot4class2))))) +
+        labs(title = input$ggplot5title,x = input$ggplot5xlab,y = input$ggplot5ylab, shape = input$ggplot5slab, color = input$ggplot5clab) +
+        themeType
+      })
+    )
+)
+
+# outlier
+fluidRow(
+    column(12,
+    renderPlot({
+      data <- data.frame(x = 1:100,y = rnorm(100))
+      data[50,2] <- 100
+      ggplot(data=data,aes(x=x,y=y))+geom_line()
+    }),
+    renderPlot({
+      data <- data.frame(x = 1:100,y = rnorm(100))
+      data[50,2] <- 100
+      ggplot(data=data,aes(x=x,y=y))+geom_line()+labs(title = "ggplot Default")
+    }),
+    renderPlot({
+      data <- data.frame(x = 1:100,y = rnorm(100))
+      data[50,2] <- 100
+      ggplot(data=data,aes(x=x,y=y))+geom_line() + ylim(-3,3) + labs(title = "Outlier Missing")
+    }),
+    renderPlot({
+      data <- data.frame(x = 1:100,y = rnorm(100))
+      data[50,2] <- 100
+      ggplot(data=data,aes(x=x,y=y))+geom_line() + coord_cartesian(ylim = c(-3,3)) + labs(title = "Outlier Including")
+    })
+    )
+)
+
+fluidRow(
+    column(12,
+    renderPlot({
+      ggplot(maacs,aes(logpm25,NocturnalSympt)) +
+        geom_point(alpha=0.3)+
+        facet_wrap(bmicat ~ mopos, ncol = 4) +
+        geom_smooth(method="lm",se=F,col="steelblue") +
+        theme_bw(base_family = "Avenir", base_size = 10) +
+        labs(x = expression("log "* PM[2.5])) +
+        labs(y = "Nocturnal Symptoms") +
+        labs(title = "MAACS Cohort")
+    }))
+)
+```

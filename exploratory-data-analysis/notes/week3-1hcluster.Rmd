@@ -1,0 +1,85 @@
+---
+title: "Week3-1 Hierarchical Clustering"
+author: "Kidult"
+date: "2019/2/15"
+output: html_document
+runtime: shiny
+---
+
+1. define close
+2. group things
+3. viz group
+4. explain group
+
+**Hierarchical clustering** (层级聚类)
+
+``method``: agglomerative approach (聚合法) 
+
+- find closest ``2`` things
+- put them ``together``
+- find ``next`` closest
+
+``Requires``: 
+
+- Defined ``distance`` (计算距离)
+- ``merging`` approach (根据距离聚类)
+
+``visulization``:
+cluster ``Tree`` showing how close things are to each other
+
+## Distance Calculate
+```{r example1, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+set.seed(1234)
+x = rnorm(12,mean=rep(1:3,each=4),sd=.2)
+y = rnorm(12,mean=rep(c(1,2,1),each=4),sd=.2)
+df <- data.frame(x=x,y=y)
+rownames(df) <- 1:12
+df.dist <- dist(df)
+hClusting <- hclust(df.dist)
+
+fluidRow(
+  column(2,br(),br(),renderTable(head(df))),
+  column(3,br(),br(),br(),
+    renderPlot(width = 400,height = 400,{
+      par(mar=c(0,0,0,0))
+      plot(x=x,y=y,col="blue",pch=19,cex=2)
+      text(x+.05,y+.05,labels=as.character(1:12))
+    })),
+  column(7,br(),br(),br(),
+         renderPrint({round(df.dist,2)}))
+)
+
+fluidRow(
+  column(2,br(),br(),renderTable(head(df))),
+  column(10,
+    renderPlot(width = 800,height = 400,{
+      plot(hClusting)
+    }))
+)
+
+#minpos <- function(list,min){if(min %in% list){which(list == min)}else{NULL}}
+#out <- as.data.frame(sort(unlist(apply(as.matrix(df.dist),1,minpos ,min=min(df.dist)))))
+
+fluidRow(
+  column(2,br(),br(),renderTable(head(df))),
+  column(10,
+    renderPlot(width = 800,height = 400,{
+      with(data = df,plot(x=x,y=y,col="blue",pch=20))
+      with(data = df,text(x=x+.05,y=y+.05,labels=rownames(df)))
+      with(data = subset(df, rownames(df) %in% c(5,6)),points(x=x,y=y,col="red",pch=4))
+      with(data = data.frame(x=mean(df$x[c(5,6)]),y=mean(df$y[c(5,6)])),points(x=x,y=y,col="red",cex=3,pch=10))
+      with(data = subset(df, rownames(df) %in% c(10,11)),points(x=x,y=y,col="orange",pch=4))
+      with(data = data.frame(x=mean(df$x[c(10,11)]),y=mean(df$y[c(10,11)])),points(x=x,y=y,col="brown",cex=3,pch=10))
+      with(data = subset(df, rownames(df) %in% c(9,12)),points(x=x,y=y,col="green",pch=4))
+      with(data = data.frame(x=mean(df$x[c(9,12)]),y=mean(df$y[c(9,12)])),points(x=x,y=y,col="green3",cex=3,pch=10))
+      with(data = subset(df, rownames(df) %in% c(2,3)),points(x=x,y=y,col="gray",pch=4))
+      with(data = data.frame(x=mean(df$x[c(2,3)]),y=mean(df$y[c(2,3)])),points(x=x,y=y,col="black",cex=3,pch=10))
+      with(data = subset(df, rownames(df) %in% c(1,4)),points(x=x,y=y,col="gray",pch=4))
+      with(data = data.frame(x=mean(df$x[c(1,4)]),y=mean(df$y[c(1,4)])),points(x=x,y=y,col="black",cex=3,pch=10))
+      with(data = data.frame(x=median(df$x[c(9,10,11,12)]),y=mean(df$y[c(9,10,11,12)])),points(x=x,y=y,col="yellowgreen",cex=8,pch=1))
+      with(data = data.frame(x=median(df$x[c(5,6,7,8)]),y=mean(df$y[c(5,6,7,8)])),points(x=x,y=y,col="red",cex=28,pch=1))
+      with(data = data.frame(x=median(df$x[c(1,2,3,4)]),y=mean(df$y[c(1,2,3,4)])),points(x=x,y=y,col="grey",cex=24,pch=1))
+    }))
+)
+```
+
