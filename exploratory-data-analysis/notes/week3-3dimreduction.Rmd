@@ -1,0 +1,56 @@
+---
+title: "Week3-3 Dimension Reduction"
+author: "Kidult"
+date: "2019/2/21"
+output: html_document
+runtime: shiny
+---
+
+
+
+```{r heatmap, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+set.seed(12345)
+df <- matrix(rnorm(400),nrow=40)
+
+fluidRow(
+    column(6,
+    renderPlot(height=800,{
+      image(1:10,1:40,t(df)[,nrow(df):1])
+    })),
+    column(6,
+    renderPlot({
+      heatmap(df)
+    }))
+)
+```
+
+```{r addmodel, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+set.seed(678910)
+df2 <- matrix(rnorm(400),nrow=40)
+for (i in 1:40){
+  coinFlip <- rbinom(1,size=1,prob=.5)
+  if (coinFlip) {
+    df2[i,] <- df2[i,] + rep(c(0,3),each=5)
+  }
+}
+
+fluidRow(
+    column(12,
+    renderPlot({
+      par(mfrow = c(1,3))
+      image(t(df2)[,nrow(df2):1])
+      plot(rowMeans(df2),40:1,xlab="RowMean",ylab="Row",pch=19)
+      plot(colMeans(df2),xlab="Column",ylab="Column Mean",pch=19)
+    }))
+)
+```
+
+multivariate vars
+
+``Set``
+- find new set of multi vars that are ``uncorrelated`` and explain as much variance as possible.
+- all vars in 1 matrix, and find the best matrix created with fewer vars(lower rank) that explains the original data.
+
+``DATA COMPRESSION``
+- SVD
+- PCA 

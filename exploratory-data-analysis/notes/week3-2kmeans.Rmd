@@ -1,0 +1,67 @@
+---
+title: "Week3-2 K-Means Clustering"
+author: "Kidult"
+date: "2019/2/21"
+output: html_document
+runtime: shiny
+---
+
+**K-means clustering** 
+
+``Method``: partioning approach
+
+- fix a ``number`` of clusters -> get "centroids"(几何中心 - ``First`` estimate)
+- assign things to closest centroid
+- ``re``calculate centroids
+
+``Requires``:
+
+- ``distance`` metric
+- ``number`` of clusters
+- ``guess`` as to cluster centroids
+
+Produces:
+
+- ``final estimate`` of cluster centroids
+- ``assignment`` of each point to cluster
+
+
+```{r kmeanclust, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+set.seed(1234)
+x = rnorm(12,mean=rep(1:3,each=4),sd=.2)
+y = rnorm(12,mean=rep(c(1,2,1),each=4),sd=.2)
+df <- data.frame(x=x,y=y)
+k <- kmeans(df,centers = 3)
+
+fluidRow(
+  column(7,br(),br(),renderPrint(k)),
+  column(5,br(),br(),br(),
+    renderPlot(width = 400,height = 400,{
+      par(mar=rep(.2,4))
+      plot(x=x,y=y,col=k$cluster,pch=19,cex=2)
+      points(k$centers,col=1:3, pch=3,cex=3,lwd=3)
+    }))
+)
+
+df2 <- df[sample(1:12),]
+k2 <- kmeans(df2,centers = 3)
+fluidRow(
+  column(12,br(),br(),renderPrint(k)),
+  column(12,br(),br(),renderPrint(k2)),
+  column(12,br(),br(),br(),
+    renderPlot({
+      par(mfrow=c(1,2),mar=c(2,4,.1,.1))
+      plot(x=x,y=y,col=k$cluster,pch=19,cex=2)
+      plot(x=x,y=y,col=k2$cluster,pch=19,cex=2)
+    }))
+)
+fluidRow(
+  column(12,br(),br(),br(),
+    renderPlot({
+      par(mfrow=c(1,2),mar=c(2,4,.1,.1))
+      #image(t(df)[,nrow(df):1],yaxt="n")
+      image(t(df)[,order(k$centers)],yaxt="n")
+      image(t(df)[,order(k2$centers)],yaxt="n")
+    }))
+)
+```
